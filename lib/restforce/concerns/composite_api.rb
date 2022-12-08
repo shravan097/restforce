@@ -23,20 +23,18 @@ module Restforce
           collateSubrequests: collate_subrequests
         }
         response = api_post('composite', properties.to_json)
+        response.body['compositeResponse']
+      end
 
-        results = response.body['compositeResponse']
+      def composite!(collate_subrequests: false, &block)
+        results = composite(all_or_none: true, collate_subrequests: collate_subrequests, &block)
         has_errors = results.any? { |result| result['httpStatusCode'].digits.last == 4 }
-        if all_or_none && has_errors
+        if has_errors
           last_error_index = results.rindex { |result| result['httpStatusCode'] != 412 }
           last_error = results[last_error_index]
           raise CompositeAPIError, last_error['body'][0]['errorCode']
         end
-
         results
-      end
-
-      def composite!(collate_subrequests: false, &block)
-        composite(all_or_none: true, collate_subrequests: collate_subrequests, &block)
       end
 
       class Subrequests
